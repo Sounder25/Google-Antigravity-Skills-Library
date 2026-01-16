@@ -1,3 +1,5 @@
+![Antigravity Skills Library](images/antigravity-banner.png)
+
 # Antigravity Skills Library
 
 A collection of **operational skills** for AI agents and automation systems.
@@ -5,30 +7,7 @@ Focused on deterministic execution, safety gates, adversarial review,
 and structured learning from failure. This repository provides **capabilities**,
 not autonomy, policy enforcement, or agent orchestration.
 
-## 📦 Installation
-
-This library is designed to live within the **Antigravity** configuration directory.
-
-1. **Locate your specific installation directory:**
-
-   ```bash
-   ~/.gemini/antigravity/skills/
-   ```
-
-2. **Clone this repository:**
-
-   ```bash
-   cd ~/.gemini/antigravity/
-   git clone https://github.com/Sounder25/Google-Antigravity-Skills-Library.git skills
-   ```
-
-3. **Verify:**
-   Ensure the directory structure matches:
-   `~/.gemini/antigravity/skills/00_workspace_forensics/SKILL.md`
-
-## ⚙️ Prerequisites
-
-**PowerShell 5.1+ or Core 7+** is required for the underlying automation scripts.
+## ⚙️ Setup
 
 One-time setup for your PowerShell session:
 

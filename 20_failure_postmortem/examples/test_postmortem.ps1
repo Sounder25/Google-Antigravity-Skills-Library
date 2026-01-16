@@ -1,6 +1,6 @@
 $ScriptPath = Join-Path $PSScriptRoot "..\scripts\log_failure.ps1"
 $ReportPath = Join-Path $PSScriptRoot "..\VERIFICATION_REPORT.md"
-$LogDir = "C:\Users\Erick\.gemini\antigravity\.forensics"
+$LogDir = Join-Path $HOME ".gemini\antigravity\.forensics"
 $LogFile = Join-Path $LogDir "POSTMORTEMS.md"
 
 Write-Host "Running Validation Tests for SKILL-020..."

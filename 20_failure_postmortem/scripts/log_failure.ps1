@@ -26,7 +26,7 @@ Param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$LogDir = "C:\Users\Erick\.gemini\antigravity\.forensics"
+$LogDir = Join-Path $HOME ".gemini\antigravity\.forensics"
 $LogFile = Join-Path $LogDir "POSTMORTEMS.md"
 
 if (-not (Test-Path $LogDir)) {

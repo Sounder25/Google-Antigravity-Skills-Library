@@ -39,7 +39,7 @@ $skillsManifest = @"
 | **Planner** | `create plan` | Create a PLAN.json before complex coding. |
 | **Feedback** | `check feedback` | See if the user has sent new instructions. |
 
-**Full Library:** `C:\Users\Erick\.gemini\antigravity\skills\README.md`
+**Full Library:** `~/.gemini/antigravity/skills/README.md`
 "@
 
 # 1. Generate MISSION.md (The Prompt)

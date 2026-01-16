@@ -6,7 +6,7 @@ Review the AuthenticationService.cs file for security vulnerabilities, specifica
 
 ## CONTEXT
 
-You are a SUB-AGENT working in an isolated directory: C:\Users\Erick\.gemini\antigravity\.swarm\audit-auth
+You are a SUB-AGENT working in an isolated directory: `~/.gemini/antigravity/.swarm/audit-auth`
 Your outputs must be saved here.
 
 ## RULES

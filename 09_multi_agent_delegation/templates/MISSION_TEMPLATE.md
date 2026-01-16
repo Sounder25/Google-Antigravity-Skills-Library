@@ -18,7 +18,7 @@ Your outputs must be saved here.
 
 ## TOOLKIT (AVAILABLE SKILLS)
 
-You have access to the Antigravity Skills Library at `C:\Users\Erick\.gemini\antigravity\skills`.
+You have access to the Antigravity Skills Library at `~/.gemini/antigravity/skills`.
 Use these triggers to invoke capabilities:
 
 {{SKILLS_MANIFEST}}

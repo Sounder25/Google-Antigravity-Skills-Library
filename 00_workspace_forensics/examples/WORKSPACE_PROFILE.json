@@ -1,0 +1,62 @@
+{
+  "collection_errors": [],
+  "forensics_completeness": "full",
+  "absolute_path": "C:\\projects\\Scrutor",
+  "intent_breadcrumbs": {
+    "README.md": {
+      "exists": false
+    },
+    "STATE.json": {
+      "exists": false
+    },
+    "NEXT.md": {
+      "exists": false
+    },
+    "PLAN.md": {
+      "exists": false
+    }
+  },
+  "languages": [
+    "C#/.NET",
+    "JavaScript/Node.js",
+    "Python"
+  ],
+  "repo_type": "git",
+  "build_signals": {
+    "project_files": [
+      "ELR.Burst.csproj",
+      "ELR.BurstClient.csproj",
+      "ELR.CLI.csproj",
+      "ELR.Core.csproj",
+      "ELR.EELS.Tests.csproj",
+      "ELR.RPC.csproj",
+      "ELR.Tests.csproj",
+      "ELR.UI.csproj",
+      "Scrutor.Burst.csproj",
+      "Scrutor.BurstClient.csproj",
+      "Scrutor.CLI.csproj",
+      "Scrutor.Core.csproj",
+      "Scrutor.RPC.csproj",
+      "Scrutor.Tests.csproj",
+      "Scrutor.UI.csproj"
+    ],
+    "solution_file": "ELR.sln",
+    "build_command": "dotnet build",
+    "test_command": "dotnet test"
+  },
+  "audit_timestamp": "2026-01-15T21:03:27.3937022-06:00",
+  "git_signals": {
+    "commits_last_30_days": 9,
+    "current_branch": "main",
+    "last_commit": {
+      "message": "Cleanup lock naming, fix build warnings",
+      "date": "2026-01-08 19:00:36 -0600",
+      "hash": "8b693f4"
+    },
+    "status_clean": false,
+    "changed_files_count": 642
+  },
+  "workspace_name": "Scrutor",
+  "markers": {},
+  "evidence_type": "repo_artifact"
+}

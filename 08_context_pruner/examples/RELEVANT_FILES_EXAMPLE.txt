@@ -1,0 +1,3 @@
+C:\projects\Scrutor\ELR.Core\Opcodes\GasLogic.cs
+C:\projects\Scrutor\ELR.Core\Execution\GasMeter.cs
+C:\projects\Scrutor\tests\GasTests.cs

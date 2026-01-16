@@ -1,0 +1,13 @@
+Client: List available skills?
+Server: 
+- 00_workspace_forensics
+- 01_run_eels_tests
+...
+- 11_mcp_connector
+
+Client: Run tool 'run_skill(id="08_context_pruner", args="-Focus rename")'
+Server: 
+Exit Code: 0
+STDOUT:
+Found 2 relevant files...
+RELEVANT_FILES.txt

@@ -1,0 +1,8 @@
+Scanning for artifacts...
+[DRY] Found: C:\projects\Scrutor\ELR.Core\obj
+[DRY] Found: C:\projects\Scrutor\ELR.Core\bin
+[DRY] Found: C:\projects\Scrutor\ELR.CLI\obj
+[DRY] Found: C:\projects\Scrutor\ELR.CLI\bin
+
+Found 4 folders to clean.
+Cleanup complete.

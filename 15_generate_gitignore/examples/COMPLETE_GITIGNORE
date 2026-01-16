@@ -1,0 +1,12 @@
+# --- Template: Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# --- Template: Node ---
+node_modules/
+npm-debug.log
+dist/
+.env

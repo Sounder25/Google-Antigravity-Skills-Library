@@ -1,0 +1,31 @@
+# OS junk
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# PowerShell
+*.log
+*.tmp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+env/
+
+# Antigravity Specific
+# We keep VERIFICATION_REPORT.md as proof of quality
+# We keep examples/ and templates/
+
+# Temporary execution artifacts
+*.out
+*.err
+state.json

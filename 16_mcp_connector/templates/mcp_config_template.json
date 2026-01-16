@@ -1,0 +1,10 @@
+{
+    "mcpServers": {
+        "antigravity-skills": {
+            "command": "python",
+            "args": [
+                "C:\\Users\\Erick\\.gemini\\antigravity\\skills\\mcp_server\\server.py"
+            ]
+        }
+    }
+}

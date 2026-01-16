@@ -1,0 +1,18 @@
+{
+    "generated_at": "2026-01-16T14:30:00",
+    "os": "Microsoft Windows 11 Pro 10.0.22631",
+    "cpu": {
+        "name": "AMD Ryzen 9 7900X 12-Core Processor",
+        "cores": 12,
+        "logical_processors": 24
+    },
+    "memory": {
+        "total_gb": 64.0,
+        "free_gb": 42.5
+    },
+    "capabilities": {
+        "has_cuda": true,
+        "has_avx2": true,
+        "powershell_version": "7.4.1"
+    }
+}

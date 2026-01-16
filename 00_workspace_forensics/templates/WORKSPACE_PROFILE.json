@@ -1,0 +1,63 @@
+{
+  "workspace_name": "ExampleProject",
+  "absolute_path": "C:\\projects\\ExampleProject",
+  "audit_timestamp": "2026-01-15T20:55:00-06:00",
+  "forensics_completeness": "full",
+  "evidence_type": "repo_artifact",
+  "collection_errors": [],
+  
+  "repo_type": "git",
+  "git_signals": {
+    "current_branch": "main",
+    "status_clean": true,
+    "changed_files_count": 0,
+    "last_commit": {
+      "hash": "a1b2c3d",
+      "date": "2026-01-15T10:30:00-06:00",
+      "message": "Add new feature"
+    },
+    "commits_last_30_days": 25
+  },
+  
+  "languages": [
+    "C#/.NET",
+    "JavaScript/Node.js"
+  ],
+  
+  "build_signals": {
+    "solution_file": "ExampleProject.sln",
+    "project_files": [
+      "ExampleProject.Core.csproj",
+      "ExampleProject.API.csproj"
+    ],
+    "build_command": "dotnet build",
+    "test_command": "dotnet test"
+  },
+  
+  "intent_breadcrumbs": {
+    "NEXT.md": {
+      "exists": true,
+      "last_modified": "2026-01-15",
+      "size_bytes": 1024
+    },
+    "PLAN.md": {
+      "exists": true,
+      "last_modified": "2026-01-10",
+      "size_bytes": 2048
+    },
+    "STATE.json": {
+      "exists": false
+    },
+    "README.md": {
+      "exists": true,
+      "last_modified": "2026-01-01",
+      "size_bytes": 4096
+    }
+  },
+  
+  "markers": {
+    "TODO": 8,
+    "FIXME": 2,
+    "NOTE": 5
+  }
+}

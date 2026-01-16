@@ -19,7 +19,7 @@ This library is designed to live within the **Antigravity** configuration direct
 
    ```bash
    cd ~/.gemini/antigravity/
-   git clone https://github.com/StartDustCrisis/Antigravity-Skills-Library.git skills
+   git clone https://github.com/Sounder25/Google-Antigravity-Skills-Library.git skills
    ```
 
 3. **Verify:**

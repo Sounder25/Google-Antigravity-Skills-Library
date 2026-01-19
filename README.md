@@ -77,6 +77,18 @@ and is behavior-frozen for v1.0.0.
 **Trigger:** `new capability`  
 `propose_skill.ps1` - Scaffolds new skills from failure data.
 
+### 22. State Overlay Consistency Checker
+
+**Skill:** SKILL-022: State Overlay Consistency Checker `✅ Verified`  
+**Trigger:** `verify state continuity`  
+Enforces state-visibility across execution contexts to prevent silent gas under-charging.
+
+### 23. Paste Sanitizer
+
+**Skill:** SKILL-023: Paste Sanitizer `✅ Verified`  
+**Trigger:** `sanitize commands`  
+Strips prompts/output from mixed snippets to ensure safe copy-pasting.
+
 ---
 
 ## 🧠 Cognitive Skills (Phase 2 - "Superpowers")

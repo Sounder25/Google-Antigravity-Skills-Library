@@ -58,6 +58,11 @@ Enforces a **"Measure Twice, Cut Once"** philosophy. This skill intercepts high-
 
 1. **Auto-Block**: Root deletions (`/`, `C:\`) are automatically blocked.
 2. **Context Awareness**: Checks `.env` and `config` keywords for higher sensitivity.
+3. **Command-Only Discipline**:
+   - Rejects output containing shell prompts (`PS C:\`, `>`).
+   - Rejects lines that look like terminal output (e.g., `Everything up-to-date`, `At line:`, `CategoryInfo:`).
+   - Rejects mixed snippets containing both commands and output.
+   - **Enforcement**: All runnable commands must be isolated in a clean, validated block.
 
 ## Stop Conditions
 
@@ -65,6 +70,7 @@ Enforces a **"Measure Twice, Cut Once"** philosophy. This skill intercepts high-
 |-----------|--------|
 | Missing Action/Target | Return error |
 | CRITICAL risk | Return `allowed: false` |
+| Mixed Output Detected | Return `allowed: false` |
 
 ## Implementation
 

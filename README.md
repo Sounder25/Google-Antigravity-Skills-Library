@@ -12,6 +12,25 @@ It provides **capabilities**, not full autonomy, policy enforcement, or agent or
 
 **Gold Standard (11):** A core reliability gate set verified across deterministic tests and live LLM runs.
 
+Read the white paper: `ENGINEERING_WHITE_PAPER.md`
+
+## Quick Start
+
+```powershell
+# Run deterministic verification
+powershell -NoProfile -ExecutionPolicy Bypass -File "Publish-Results.ps1"
+
+# Run a live LLM gate scenario (requires Ollama + qwen2.5:7b)
+powershell -NoProfile -ExecutionPolicy Bypass -File "E2E_Evaluations\Live_Harness.ps1" -ScenarioPath "E2E_Evaluations\Live_Scenarios\03_output_verifier.json" -Model "qwen2.5:7b"
+```
+
+## Verification
+
+- Publishable proof: `PUBLISHABLE_PROOF.md`
+- Phase 2 evidence: `PHASE2_PROOF.md`
+- Gold Standard set: `GOLD_STANDARD.md`
+- Deterministic summary: `VERIFICATION_SUMMARY.md`
+
 ## Why Foundational Agent Skills?
 
 In the rush to build powerful agents, most skill collections jump straight to flashy features. This library does the opposite: it enforces a **proper foundation** first — exactly as rigorous process evaluation (Lean, Six Sigma, fault-tree analysis) demands in traditional engineering.

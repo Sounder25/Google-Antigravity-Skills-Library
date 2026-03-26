@@ -6,7 +6,7 @@ Status: completed for all foundational skills except EELS (removed from scope).
 
 Evidence:
 - VERIFICATION_SUMMARY.md (global deterministic report)
-- Per-skill VERIFICATION_REPORT.md in each skill folder
+- Per-skill VERIFICATION_REPORT.md generated during runs (not committed)
 
 ## Tier 2 - Orchestration Verification
 

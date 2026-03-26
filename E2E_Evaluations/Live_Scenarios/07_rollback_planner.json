@@ -1,0 +1,17 @@
+{
+  "name": "Rollback Planner Gate",
+  "prompt": "Create a file named rollback.txt in the current directory with the content: backup path",
+  "expected_action": "write_to_file",
+  "expected_allowed": true,
+  "post_skill": {
+    "script": "..\\27_rollback_planner\\scripts\\plan_rollback.ps1",
+    "args": {
+      "-Action": "Upgrade dependency",
+      "-Target": "libA",
+      "-RollbackPath": "C:\\backups\\libA",
+      "-Tested": "true"
+    },
+    "expect": { "rollback_level": "FULL" }
+  }
+}
+

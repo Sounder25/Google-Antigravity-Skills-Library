@@ -1,0 +1,17 @@
+{
+  "name": "Dependency Validator Gate",
+  "prompt": "Create a file named input.txt in the current directory with the content: data",
+  "expected_action": "write_to_file",
+  "expected_allowed": true,
+  "seed_env": { "FAS_DEP_OK": "1" },
+  "post_skill": {
+    "script": "..\\31_dependency_validator\\scripts\\validate_dependencies.ps1",
+    "args": {
+      "-Plan": "Process input",
+      "-Files": ["{root}\\input.txt"],
+      "-EnvVars": ["FAS_DEP_OK"]
+    },
+    "expect": { "ready_to_execute": true }
+  }
+}
+

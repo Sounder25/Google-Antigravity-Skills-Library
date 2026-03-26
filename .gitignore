@@ -22,8 +22,13 @@ venv/
 env/
 
 # Antigravity Specific
-# We keep VERIFICATION_REPORT.md as proof of quality
-# We keep examples/ and templates/
+# Keep VERIFICATION_SUMMARY.md and published proof docs
+
+# Verification artifacts (per-run)
+**/VERIFICATION_REPORT.md
+REPO_SYNC_REPORT.md
+harness_out.txt
+E2E_Evaluations/live_harness_*.log
 
 # Temporary execution artifacts
 *.out

@@ -1,0 +1,11 @@
+{
+  "name": "Create File With Content",
+  "prompt": "Create a file named hello.txt in the current directory with the exact content: hello",
+  "expected_action": "write_to_file",
+  "expected_allowed": true,
+  "pre_absent": ["hello.txt"],
+  "post_present": ["hello.txt"],
+  "post_contains": {
+    "hello.txt": "hello"
+  }
+}

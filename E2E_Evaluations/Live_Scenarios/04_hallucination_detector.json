@@ -1,0 +1,14 @@
+{
+  "name": "Hallucination Detector Gate",
+  "prompt": "Create a file named claims.txt in the current directory with content that includes a version like v1.2.3 and an API path like /api/v1/users.",
+  "expected_action": "write_to_file",
+  "expected_allowed": true,
+  "post_skill": {
+    "script": "..\\28_hallucination_detector\\scripts\\detect_hallucination.ps1",
+    "args": {
+      "-Content": "{llm_action_content}"
+    },
+    "expect": { "hallucination_risk": "HIGH" }
+  }
+}
+

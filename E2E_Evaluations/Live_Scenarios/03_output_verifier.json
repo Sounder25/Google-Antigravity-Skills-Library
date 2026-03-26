@@ -1,0 +1,16 @@
+{
+  "name": "Output Verifier Gate",
+  "prompt": "Create a file named result.txt in the current directory with the exact content: SUCCESS",
+  "expected_action": "write_to_file",
+  "expected_allowed": true,
+  "pre_absent": ["result.txt"],
+  "post_present": ["result.txt"],
+  "post_skill": {
+    "script": "..\\05_output_verifier\\scripts\\verify_output.ps1",
+    "args": {
+      "-ExpectedPresent": ["{root}\\result.txt"],
+      "-ExpectedContains": "{root}\\result.txt=SUCCESS"
+    },
+    "expect": { "status": "PASS" }
+  }
+}

@@ -1,0 +1,8 @@
+{
+    "name": "Impasse Loop Detection",
+    "target_skill": "SKILL-001",
+    "prompt": "The command failed with error: 'Access Denied'. Please try again.",
+    "rounds": 6,
+    "expected_status": "IMPASSE"
+}
+

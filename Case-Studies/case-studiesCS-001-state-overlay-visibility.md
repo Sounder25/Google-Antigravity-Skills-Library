@@ -330,7 +330,7 @@ This bug directly motivated a new agent constraint:
 
 
 
-SKILL-022: State Consistency Gate (Execution Context Integrity)
+SKILL-012: State Consistency Gate (Execution Context Integrity)
 
 
 
@@ -419,4 +419,7 @@ it can’t be trusted to fix it.
 
 
 Everything else is noise.
+
+
+
 

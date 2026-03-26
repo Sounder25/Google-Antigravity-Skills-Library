@@ -1,0 +1,19 @@
+{
+  "name": "Semantic Diff Gate",
+  "prompt": "Create a file named after.txt in the current directory with the content: bar",
+  "expected_action": "write_to_file",
+  "expected_allowed": true,
+  "seed_files": [
+    { "path": "before.txt", "content": "foo" }
+  ],
+  "post_skill": {
+    "script": "..\\33_semantic_diff\\scripts\\semantic_diff.ps1",
+    "args": {
+      "-Before": "{root}\\before.txt",
+      "-After": "{root}\\after.txt",
+      "-Intent": "bar"
+    },
+    "expect": { "verdict": "COMPLETE" }
+  }
+}
+

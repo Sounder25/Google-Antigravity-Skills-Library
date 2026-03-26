@@ -6,7 +6,7 @@ date: March 2026
 version: 1.0
 keywords: [agent skills, trustworthy agents, meta-skills, deterministic execution, agent reliability, QMS, manufacturing process control]
 abstract: |
-  AI agents fail in production in predictable, preventable ways. The root causes are not insufficient model capability — they are the absence of a reliability architecture around the model. This white paper shows how the same reliability mechanisms that transformed high-consequence manufacturing 40 years ago directly map to AI agent execution. Foundational Agent Skills is the completed translation: a modular, .md-first library of 23 skills that enforce safety gates, state visibility, impasse detection, adversarial review, and structured learning from failure — before any higher-order capabilities are added.
+  AI agents fail in production in predictable, preventable ways. The root causes are not insufficient model capability — they are the absence of a reliability architecture around the model. This white paper shows how the same reliability mechanisms that transformed high-consequence manufacturing 40 years ago directly map to AI agent execution. Foundational Agent Skills is the completed translation: a modular, .md-first library of 33 skills that enforce safety gates, state visibility, impasse detection, adversarial review, and structured learning from failure — before any higher-order capabilities are added.
 ---
 
 # Foundational Agent Skills  
@@ -16,7 +16,7 @@ abstract: |
 **Framework:** Foundational Agent Skills  
 **License:** Apache 2.0  
 **Repository:** https://github.com/Sounder25/Foundational-Agent-Skills  
-**Skills:** 23 | **Gold Standard Verified:** 7
+**Skills:** 33 | **Gold Standard Verified:** 11
 
 ## I. The Problem with AI Agents in Production
 
@@ -53,14 +53,14 @@ Each skill maps one-to-one with a documented agent failure mode:
 
 | QMS Concept                        | AI Agent Failure Mode                              | Foundational Agent Skill                          |
 |------------------------------------|----------------------------------------------------|---------------------------------------------------|
-| Non-Conformance Report             | Agent fails silently with no structured record     | SKILL-020: Failure Postmortem                     |
-| Root Cause Analysis                | Agent stops at first plausible answer              | SKILL-019: Adversarial Reviewer                   |
-| Pre-Process Inspection Gate        | Destructive action executed without validation     | SKILL-018: Pre-Action Guard                       |
-| Impasse / Escalation Detection     | Agent loops indefinitely on a failing approach     | SKILL-017: Impasse Detector                       |
-| Skill / Capability Gap             | Team lacks tool to prevent a known failure class   | SKILL-021: Skill Gap Identifier                   |
-| State Audit / Workspace Forensics  | Agent operates on corrupted or stale state         | SKILL-000: Workspace Forensics                    |
-| Process Standardization            | Inconsistent execution across agents or sessions   | SKILL-007: Deterministic Planner                  |
-| Context Management                 | Agent loses critical context mid-task              | SKILL-008: Context Window Pruner                  |
+| Non-Conformance Report             | Agent fails silently with no structured record     | SKILL-004: Failure Postmortem                     |
+| Root Cause Analysis                | Agent stops at first plausible answer              | SKILL-003: Adversarial Reviewer                   |
+| Pre-Process Inspection Gate        | Destructive action executed without validation     | SKILL-002: Pre-Action Guard                       |
+| Impasse / Escalation Detection     | Agent loops indefinitely on a failing approach     | SKILL-001: Impasse Detector                       |
+| Skill / Capability Gap             | Team lacks tool to prevent a known failure class   | SKILL-024: Skill Gap Identifier                   |
+| State Audit / Workspace Forensics  | Agent operates on corrupted or stale state         | SKILL-008: Workspace Forensics                    |
+| Process Standardization            | Inconsistent execution across agents or sessions   | SKILL-014: Deterministic Planner                  |
+| Context Management                 | Agent loses critical context mid-task              | SKILL-015: Context Window Pruner                  |
 
 The mapping is not metaphorical.  
 The **Pre-Action Guard** performs exactly the same function as a machining setup verification: it blocks the irreversible step until preconditions are confirmed.  
@@ -81,6 +81,22 @@ Three deliberate design decisions set this library apart from typical ad-hoc pro
 
 The library does not attempt to make agents “smarter.” It makes the environment around them **more disciplined**.
 
+## Gold Standard Skills (v1)
+
+The Gold Standard set is the minimum reliability core modeled after QMS gates. These eleven skills are deterministic, test-backed, and non-optional when applicable:
+
+1. **SKILL-001: Impasse Detector** — loop detection / escalation threshold
+2. **SKILL-002: Pre-Action Guard** — destructive action inspection gate
+3. **SKILL-003: Adversarial Reviewer** — plan stress-testing / RCA trigger
+4. **SKILL-004: Failure Postmortem** — failure memory (NCR)
+5. **SKILL-005: Output Verifier** — final inspection / postcondition check
+6. **SKILL-006: Assumption Auditor** — FMEA-style pre-execution checklist
+7. **SKILL-007: Scope Guard** — containment action / scope drift prevention
+8. **SKILL-027: Rollback Planner** — reversible execution gate
+9. **SKILL-028: Hallucination Detector** — claim validity gate
+10. **SKILL-031: Dependency Validator** — pre-run readiness gate
+11. **SKILL-033: Semantic Diff** — intent completeness gate
+
 ## V. Getting Started
 
 The library is open source under Apache 2.0 and designed for immediate drop-in use.
@@ -90,3 +106,6 @@ The library is open source under Apache 2.0 and designed for immediate drop-in u
 mkdir -p ~/.gemini/antigravity/skills
 cd ~/.gemini/antigravity/skills
 git clone https://github.com/Sounder25/Foundational-Agent-Skills.git .    
+
+
+

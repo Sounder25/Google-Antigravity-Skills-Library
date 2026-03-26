@@ -4,11 +4,13 @@
 
 **Operational capabilities for high-leverage AI coding agents.**
 
-A modular, **.md-first** library of 23 foundational skills designed to make AI agents reliable, observable, deterministic, and self-improving. 
+A modular, **.md-first** library of 33 foundational skills designed to make AI agents reliable, observable, deterministic, and self-improving. 
 
 Born from real-world friction in a complex production project, this collection prioritizes **safety gates**, **state visibility**, **impasse detection**, **adversarial review**, and **structured learning from failure** — *before* layering on higher-order capabilities.
 
 It provides **capabilities**, not full autonomy, policy enforcement, or agent orchestration.
+
+**Gold Standard (11):** A core reliability gate set verified across deterministic tests and live LLM runs.
 
 ## Why Foundational Agent Skills?
 
@@ -31,5 +33,8 @@ Every skill lives in its own self-contained folder with a clear `SKILL.md` (natu
 
 ### MCP Connector
 
-**Skill:** SKILL-016: MCP Connector  
+**Skill:** SKILL-023: MCP Connector  
 `server.py` - Exposes this entire library as an MCP Server.
+
+
+

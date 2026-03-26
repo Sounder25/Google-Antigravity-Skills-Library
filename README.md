@@ -1,5 +1,10 @@
 ![Foundational Agent Skills](Images/antigravity-banner.png)
 
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
+![CI](https://github.com/Sounder25/Foundational-Agent-Skills/actions/workflows/powershell-ci.yml/badge.svg)
+![Gold Standard](https://img.shields.io/badge/Gold%20Standard-11-success)
+![Skills](https://img.shields.io/badge/Skills-33-blue)
+
 # Foundational Agent Skills
 
 **Operational capabilities for high-leverage AI coding agents.**

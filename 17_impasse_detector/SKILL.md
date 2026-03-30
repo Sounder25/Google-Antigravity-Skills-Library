@@ -1,17 +1,16 @@
 ---
-name: Impasse Detector
-description: Detects when the agent is stuck in a reasoning loop or unproductive state by analyzing tool usage and sentiment patterns.
-version: 1.0.0
-author: Antigravity Skills Library
-created: 2026-01-16
-leverage_score: 5/5
+name: impasse-detector
+description: "Detect when an agent is stuck in a reasoning loop or unproductive state by analyzing conversation history, tool-usage patterns, and sentiment signals. Returns a confidence-scored status with escalation recommendations. Use when an agent loop exceeds expected turns, token usage spikes without progress, or any workflow needs a circuit breaker against stuck states."
+metadata:
+  version: 1.0.0
+  author: Antigravity Skills Library
+  created: 2026-01-16
+  leverage_score: 5/5
 ---
 
-# SKILL-017: Impasse Detector
+# Impasse Detector
 
-## Overview
-
-Critical **meta-cognitive skill** that acts as a circuit breaker for unproductive loops. It analyzes recent conversation history and tool outputs to detect "stuck" states, preventing token wastage on failing paths and forcing escalation or delegation.
+Meta-cognitive circuit breaker that analyzes recent conversation history and tool outputs to detect stuck states, preventing token waste and forcing escalation or delegation.
 
 ## Trigger Phrases
 
@@ -24,13 +23,24 @@ Critical **meta-cognitive skill** that acts as a circuit breaker for unproductiv
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `--TranscriptPath` | string | No | $null | Path to conversation log/json |
-| `--Content` | string | No | $null | Direct string content to analyze |
+| `--TranscriptPath` | string | No | — | Path to conversation log (JSON) |
+| `--Content` | string | No | — | Direct string content to analyze |
 | `--Lookback` | int | No | 10 | Number of recent turns to analyze |
 
-## Outputs
+## Workflow
 
-### 1. Analysis Result (JSON)
+1. **Load** transcript from `--TranscriptPath` or `--Content` (at least one required). **Validate** the input is parseable JSON or non-empty text before proceeding.
+2. **Window** the last `--Lookback` turns.
+3. **Scan** for loop indicators using these heuristics:
+   - **Apology loop**: 3+ occurrences of "sorry", "I apologize", "let me try again" in the window.
+   - **Tool repetition**: same tool called 4+ times with identical arguments.
+   - **Oscillation**: output alternates between two states (e.g., create/delete cycle).
+   - **No-progress**: token count increases but no new files written or tests passed.
+4. **Score** impasse confidence (0–100) — each matched heuristic adds 20–30 points; cap at 100.
+5. **Verify** score is consistent: if only one weak signal, cap confidence at 50.
+6. **Return** structured JSON with status, reasons, and recommendation.
+
+## Outputs
 
 ```json
 {
@@ -45,37 +55,45 @@ Critical **meta-cognitive skill** that acts as a circuit breaker for unproductiv
 }
 ```
 
-### 2. Status Codes
+### Status Codes
 
-- `CLEAR`: No issues detected.
-- `IMPASSE`: Significant loop/blockage detected.
-- `UNKNOWN`: Insufficient data.
+| Status | Meaning |
+|--------|---------|
+| `CLEAR` | No issues detected |
+| `IMPASSE` | Significant loop or blockage detected |
+| `UNKNOWN` | Insufficient data to evaluate |
 
 ## Preconditions
 
-1. Access to conversation history OR a provided transcript string.
+1. Access to conversation history or a provided transcript string.
 2. PowerShell 5.1+ or Core 7+.
 
 ## Safety/QA Checks
 
-1. **Read-Only**: This skill only analyzes text; it does not modify state.
-2. **Fail-Safe**: If input is missing/malformed, defaults to "UNKNOWN" rather than crashing.
+- **Read-only** — analyzes text only; never modifies state.
+- **Fail-safe** — returns `UNKNOWN` (0 confidence) if input is missing or malformed.
 
 ## Stop Conditions
 
 | Condition | Action |
 |-----------|--------|
-| No input provided | Return status "UNKNOWN" (0 confidence) |
+| No input provided | Return status `UNKNOWN` (0 confidence) |
 | File not found | Return error JSON |
 
 ## Implementation
 
-See `scripts/detect_impasse.ps1`.
+Core detection logic (see `scripts/detect_impasse.ps1` for full implementation):
+
+```powershell
+# Pseudocode: count loop indicators in the lookback window
+$apologies = ($window | Select-String -Pattern "sorry|apologize|let me try again").Count
+$repeatedTools = ($window | Group-Object ToolCall | Where-Object { $_.Count -ge 4 }).Count
+$score = ($apologies * 25) + ($repeatedTools * 30)
+$status = if ($score -ge 60) { "IMPASSE" } elseif ($score -gt 0) { "CLEAR" } else { "UNKNOWN" }
+```
 
 ## Integration with Other Skills
 
-**All agent loops should:**
-
-1. Call SKILL-017 every 5-10 turns.
-2. If status is `IMPASSE`, trigger **SKILL-020 (Failure Postmortem)** AND **SKILL-010 (Async Feedback)**.
-3. If score > 90, stop execution and warn user.
+Call this skill every 5–10 turns in any agent loop:
+- If `IMPASSE` → trigger **Failure Postmortem (Skill-020)** and **Async Feedback (Skill-010)**.
+- If `score > 90` → halt execution and warn the user.

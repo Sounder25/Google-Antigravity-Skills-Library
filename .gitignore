@@ -29,3 +29,15 @@ env/
 *.out
 *.err
 state.json
+
+# ── CONFIDENTIAL: Solid State M&A Project ──────────────────────────────────────
+# Raw intelligence data — never commit to remote
+solid state/Target Company Research/companies.json
+solid state/Target Company Research/target_export.csv
+
+# Generated deliverables — commit only when explicitly reviewed and cleared
+solid state/Target Company Research/leads.md
+solid state/Market & Supply Chain Mapping/*.json
+solid state/Due Diligence/
+solid state/**/*.csv
+solid state/**/*.json

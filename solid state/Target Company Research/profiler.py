@@ -12,6 +12,7 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), "companies.json")
 
 NAICS_TARGETS = {
     "336415": "Guided Missile & Space Vehicle Propulsion Units",
+    "325920": "Explosives Manufacturing (AP, energetic materials)",
     "332993": "Ammunition (non-small arms) / Propellant Mfg",
     "325180": "Inorganic Chemicals (Oxidizers, Ammonium Perchlorate)",
     "336419": "Other Guided Missile / Space Vehicle Parts",
@@ -19,6 +20,30 @@ NAICS_TARGETS = {
     "541330": "Engineering Services — Defense/Propulsion",
     "336411": "Aircraft Manufacturing (propulsion-adjacent)",
 }
+
+SRM_STACK_ROLES = [
+    "Propellant — Binders/Pre-polymers (HTPB, MAPO, IPDI)",
+    "Propellant — Oxidizers (Ammonium Perchlorate, AP)",
+    "Propellant — Energetic Additives (RDX, HMX, Al powder)",
+    "Propellant — Mixing & Casting",
+    "Casing — Carbon Fiber / Filament Winding",
+    "Casing — Specialty Steel / Metal",
+    "Casing — Insulation & Liner",
+    "Nozzle — Carbon-Carbon / Graphite Ablative",
+    "Nozzle — Throat Inserts / TVC Components",
+    "Igniter / Initiator — Pyrotechnic",
+    "Igniter / Initiator — Electrical",
+    "Test & Measurement — Hot Fire / Ballistic",
+    "Other / Multi-role",
+]
+
+SBIR_SIGNALS = [
+    "None identified",
+    "Phase I only",
+    "Phase II awarded — solid propellant / rocket motor topic",
+    "Phase II awarded — adjacent topic (energetics, composite structures)",
+    "Phase III / direct-to-program (strongest signal)",
+]
 
 TIER1_PRIMES = [
     "Northrop Grumman",
@@ -129,6 +154,27 @@ def score_clearance(clearance: str, specialized_facilities: list[str]) -> tuple[
     return score, notes
 
 
+def score_sbir(signal: str, sub_award_confirmed: bool) -> tuple[int, str]:
+    """
+    SBIR Phase II/III is a smoking gun for Tier 3 tech providers in the $35M–$100M band.
+    Sub-award confirmation from a Tier 1 prime elevates score further.
+    """
+    signal_scores = {
+        "None identified": 0,
+        "Phase I only": 2,
+        "Phase II awarded — solid propellant / rocket motor topic": 8,
+        "Phase II awarded — adjacent topic (energetics, composite structures)": 5,
+        "Phase III / direct-to-program (strongest signal)": 10,
+    }
+    score = signal_scores.get(signal, 0)
+    if sub_award_confirmed:
+        score = min(score + 3, 10)
+    notes = signal
+    if sub_award_confirmed:
+        notes += " | Sub-award from Tier 1 confirmed"
+    return score, notes
+
+
 def score_ma_readiness(signal: str, broker_engaged: bool, asking_price_usd: float | None) -> tuple[int, str]:
     signal_scores = {
         "None identified": 1,
@@ -157,9 +203,10 @@ def compute_total_score(profile: dict) -> dict:
     s4, n4 = score_prime_relationships(profile["prime_relationships"])
     s5, n5 = score_industry_presence(profile["jannaf_presence"], profile["trade_shows"], profile["publications"])
     s6, n6 = score_clearance(profile["clearance_level"], profile["specialized_facilities"])
-    s7, n7 = score_ma_readiness(profile["ma_signal"], profile["broker_engaged"], profile.get("asking_price_usd"))
+    s7, n7 = score_sbir(profile.get("sbir_signal", "None identified"), profile.get("sub_award_confirmed", False))
+    s8, n8 = score_ma_readiness(profile["ma_signal"], profile["broker_engaged"], profile.get("asking_price_usd"))
 
-    total = s1 + s2 + s3 + s4 + s5 + s6 + s7
+    total = s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8
 
     return {
         "total_score": total,
@@ -171,17 +218,18 @@ def compute_total_score(profile: dict) -> dict:
             "prime_relationships":    {"score": s4, "max": 15, "notes": n4},
             "industry_presence":      {"score": s5, "max": 10, "notes": n5},
             "clearance_facilities":   {"score": s6, "max": 10, "notes": n6},
-            "ma_readiness":           {"score": s7, "max":  5, "notes": n7},
+            "sbir_signal":            {"score": s7, "max": 10, "notes": n7},
+            "ma_readiness":           {"score": s8, "max":  5, "notes": n8},
         },
     }
 
 
 def tier_label(score: int) -> str:
-    if score >= 80:
+    if score >= 85:
         return "PRIORITY — Strong Acquisition Candidate"
-    elif score >= 60:
+    elif score >= 65:
         return "QUALIFIED — Warrants Deep Dive"
-    elif score >= 40:
+    elif score >= 45:
         return "WATCH — Monitor & Verify"
     else:
         return "LOW FIT — Insufficient Alignment"
@@ -290,7 +338,14 @@ def add_company() -> None:
     clearance_level        = prompt_choice("Clearance Level", CLEARANCE_LEVELS)
     specialized_facilities = prompt_list("Specialized facilities (e.g. propellant mixing, hot fire test, composite layup)")
 
-    print("\n── Identifier 7: M&A Readiness ──")
+    print("\n── Identifier 7: SBIR / STTR Signal ──")
+    sbir_signal        = prompt_choice("SBIR/STTR Signal", SBIR_SIGNALS)
+    sub_award_confirmed = prompt_bool("Sub-award from Tier 1 prime confirmed in FPDS/USASpending?")
+
+    print("\n── SRM Stack Role ──")
+    srm_role = prompt_choice("Primary role in SRM stack", SRM_STACK_ROLES)
+
+    print("\n── Identifier 8: M&A Readiness ──")
     ma_signal      = prompt_choice("M&A Readiness Signal", MA_SIGNALS)
     broker_engaged = prompt_bool("Investment banker or broker engaged?")
     asking_price   = prompt_float("Asking price or valuation discussed ($USD, 0 if unknown)", 0)
@@ -316,6 +371,9 @@ def add_company() -> None:
         "publications":            publications,
         "clearance_level":         clearance_level,
         "specialized_facilities":  specialized_facilities,
+        "sbir_signal":             sbir_signal,
+        "sub_award_confirmed":     sub_award_confirmed,
+        "srm_role":                srm_role,
         "ma_signal":               ma_signal,
         "broker_engaged":          broker_engaged,
         "asking_price_usd":        asking_price if asking_price > 0 else None,
@@ -387,9 +445,11 @@ def export_csv() -> None:
     export_path = os.path.join(os.path.dirname(__file__), "target_export.csv")
     fieldnames = [
         "company_name", "hq_state", "employee_count", "known_revenue",
-        "total_score", "tier_fit", "naics_codes", "annual_award_volume_usd",
-        "sam_registered", "cage_code", "prime_relationships", "jannaf_presence",
-        "clearance_level", "ma_signal", "broker_engaged", "asking_price_usd",
+        "total_score", "tier_fit", "srm_role", "naics_codes",
+        "annual_award_volume_usd", "sam_registered", "cage_code",
+        "prime_relationships", "jannaf_presence", "clearance_level",
+        "sbir_signal", "sub_award_confirmed",
+        "ma_signal", "broker_engaged", "asking_price_usd",
         "source", "date_added", "notes",
     ]
 

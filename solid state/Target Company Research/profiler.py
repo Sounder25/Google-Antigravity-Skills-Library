@@ -99,24 +99,24 @@ def estimate_revenue(headcount: int) -> tuple[bool, float]:
     """
     A&D manufacturing RPE: $250k–$450k depending on facility automation.
     Mid-point $350k used for sweet-spot scoring.
-    $30M–$100M band = 85–286 employees.
+    $35M–$100M band = 100–286 employees.
     """
     RPE_MID = 350_000
     est_rev = headcount * RPE_MID
-    in_band = 30_000_000 <= est_rev <= 100_000_000
+    in_band = 35_000_000 <= est_rev <= 100_000_000
     return in_band, est_rev
 
 
 def check_revenue_fit(headcount: int) -> tuple[bool, float]:
     """
     Bluestreak Step 2 — revenue fit gate.
-    Targets: $30M–$100M Revenue.
+    Targets: $35M–$100M Revenue.
     A&D RPE Midpoint: $350k.
-    Calculated Headcount Range: 85–286 FTEs.
+    Calculated Headcount Range: 100–286 FTEs.
     """
     RPE_A_D = 350_000
     estimated_revenue = headcount * RPE_A_D
-    if 30_000_000 <= estimated_revenue <= 100_000_000:
+    if 35_000_000 <= estimated_revenue <= 100_000_000:
         return True, estimated_revenue
     return False, estimated_revenue
 
@@ -124,7 +124,7 @@ def check_revenue_fit(headcount: int) -> tuple[bool, float]:
 def score_revenue_proxy(employee_count: int, annual_awards: float) -> tuple[int, str]:
     """
     A&D manufacturing RPE: $250k–$450k, mid $350k.
-    Sweet spot: 85–286 employees maps to $30M–$100M.
+    Sweet spot: 100–286 employees maps to $35M–$100M.
     Award proxy: gov contracts typically 40–70% of Tier 2/3 revenue.
     """
     RPE_LOW, RPE_MID, RPE_HIGH = 250_000, 350_000, 450_000
@@ -134,9 +134,9 @@ def score_revenue_proxy(employee_count: int, annual_awards: float) -> tuple[int,
 
     award_proxy = (annual_awards / 0.55) if annual_awards > 0 else 0
 
-    mid_in_band    = 30_000_000 <= est_mid  <= 100_000_000
-    range_in_band  = est_low   <= 100_000_000 and est_high >= 30_000_000
-    award_in_band  = 30_000_000 <= award_proxy <= 100_000_000
+    mid_in_band    = 35_000_000 <= est_mid  <= 100_000_000
+    range_in_band  = est_low   <= 100_000_000 and est_high >= 35_000_000
+    award_in_band  = 35_000_000 <= award_proxy <= 100_000_000
 
     if mid_in_band and award_in_band:
         return 20, (
@@ -159,7 +159,24 @@ def score_revenue_proxy(employee_count: int, annual_awards: float) -> tuple[int,
             f"award proxy ${award_proxy/1e6:.1f}M — one signal near band"
         )
     else:
-        return 2, f"Weak — RPE mid ${est_mid/1e6:.1f}M likely outside $30M–$100M band"
+        return 2, f"Weak — RPE mid ${est_mid/1e6:.1f}M likely outside $35M–$100M band"
+
+
+def score_ebitda(ebitda_pct: float, ebitda_band_low: float, ebitda_band_high: float) -> tuple[int, str]:
+    """
+    Scores estimated EBITDA margin against Citadel's 15%+ criterion.
+    Max 5 pts — secondary dimension since EBITDA is rarely confirmed pre-LOI.
+    """
+    mid = (ebitda_band_low + ebitda_band_high) / 2 if ebitda_band_high > 0 else ebitda_pct
+    effective = ebitda_pct if ebitda_pct > 0 else mid
+    if effective <= 0:
+        return 0, "EBITDA unknown"
+    elif effective < 0.15:
+        return 0, f"Below criterion — estimated {effective:.0%} EBITDA (floor: 15%)"
+    elif effective <= 0.25:
+        return 5, f"On target — estimated {effective:.0%} EBITDA (Citadel criterion met)"
+    else:
+        return 4, f"High margin — estimated {effective:.0%} EBITDA (above typical Tier 2/3 range)"
 
 
 def score_prime_relationships(primes: list[str]) -> tuple[int, str]:
@@ -252,12 +269,18 @@ def compute_total_score(profile: dict) -> dict:
     s6, n6 = score_clearance(profile["clearance_level"], profile["specialized_facilities"])
     s7, n7 = score_sbir(profile.get("sbir_signal", "None identified"), profile.get("sub_award_confirmed", False))
     s8, n8 = score_ma_readiness(profile["ma_signal"], profile["broker_engaged"], profile.get("asking_price_usd"))
+    s9, n9 = score_ebitda(
+        profile.get("ebitda_pct_estimate", 0.0),
+        profile.get("ebitda_band_low", 0.0),
+        profile.get("ebitda_band_high", 0.0),
+    )
 
-    total = s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8
+    total = s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9
 
     return {
         "total_score": total,
         "tier_fit": tier_label(total),
+        "clearance_group": profile.get("clearance_group", "A"),
         "breakdown": {
             "naics_alignment":        {"score": s1, "max": 20, "notes": n1},
             "gov_contract_presence":  {"score": s2, "max": 20, "notes": n2},
@@ -267,6 +290,7 @@ def compute_total_score(profile: dict) -> dict:
             "clearance_facilities":   {"score": s6, "max": 10, "notes": n6},
             "sbir_signal":            {"score": s7, "max": 10, "notes": n7},
             "ma_readiness":           {"score": s8, "max":  5, "notes": n8},
+            "ebitda_margin":          {"score": s9, "max":  5, "notes": n9},
         },
     }
 
@@ -392,6 +416,14 @@ def add_company() -> None:
     print("\n── SRM Stack Role ──")
     srm_role = prompt_choice("Primary role in SRM stack", SRM_STACK_ROLES)
 
+    print("\n── EBITDA Estimate ──")
+    ebitda_pct_estimate = prompt_float("Estimated EBITDA % (e.g. 0.18 for 18%, 0 if unknown)", 0.0)
+    ebitda_band_low     = prompt_float("EBITDA band low (e.g. 0.15, or 0 if unknown)", 0.0)
+    ebitda_band_high    = prompt_float("EBITDA band high (e.g. 0.22, or 0 if unknown)", 0.0)
+
+    print("\n── Clearance Group (Citadel Briefing Book Classification) ──")
+    clearance_group = prompt_choice("Clearance Group", ["A", "B"])
+
     print("\n── Compliance & Risk (Vetting Engine Inputs) ──")
     print(f"  CMMC deadline: 2026-11-10  (check vetting_engine.py for penalty status)")
     cmmc_level_2       = prompt_bool("CMMC Level 2 certified?")
@@ -429,6 +461,10 @@ def add_company() -> None:
         "sbir_signal":             sbir_signal,
         "sub_award_confirmed":     sub_award_confirmed,
         "srm_role":                srm_role,
+        "ebitda_pct_estimate":      ebitda_pct_estimate,
+        "ebitda_band_low":          ebitda_band_low,
+        "ebitda_band_high":         ebitda_band_high,
+        "clearance_group":          clearance_group,
         "cmmc_level_2":             cmmc_level_2,
         "cmmc_pathway_exists":      cmmc_pathway_exists,
         "niss_eligible":            niss_eligible,
@@ -449,7 +485,7 @@ def add_company() -> None:
 
     print("\n" + "═" * 60)
     print(f"  PROFILE SAVED: {company_name}")
-    print(f"  TOTAL SCORE:   {scored['total_score']} / 110")
+    print(f"  TOTAL SCORE:   {scored['total_score']} / 115")
     print(f"  ASSESSMENT:    {scored['tier_fit']}")
     print(f"  Run vetting_engine.py for purchasability score (CMMC/FOCI analysis)")
     print("═" * 60)
@@ -486,7 +522,7 @@ def view_profile(name_fragment: str) -> None:
     if c.get("known_revenue"):
         print(f"  Known Revenue: {c['known_revenue']}")
     print(f"  Source: {c['source']}")
-    print(f"\n  SCORE: {c['total_score']} / 100  —  {c['tier_fit']}")
+    print(f"\n  SCORE: {c['total_score']} / 115  —  {c['tier_fit']}  |  Group {c.get('clearance_group', 'A')}")
     print("\n  Score Breakdown:")
     for key, val in c["breakdown"].items():
         bar = "█" * val["score"] + "░" * (val["max"] - val["score"])

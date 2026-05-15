@@ -1,7 +1,11 @@
 """
 Bluestreak Vetting Engine — Purchasability Scoring & Compliance Screening
 Integrates FOCI/NISS (May 2026 rule), CMMC Level 2 deadline, and risk weights.
-Confidential // Industrial Base Resilience Mapping
+Confidential // US Industrial Base Resilience Study
+
+Two scoring classes:
+  BluestreakVetter  — streamlined assess_target() per latest platform spec
+  BluestreakEngine  — full engine with risk weights, briefs, batch ranking
 """
 
 from __future__ import annotations
@@ -10,47 +14,175 @@ import json
 import os
 import sys
 
-# ── Default Config (overridden by bluestreak_config.json vetting_standards) ────
+# ── Canonical Config ────────────────────────────────────────────────────────────
 
 DEFAULT_CONFIG = {
-    "vetting_standards": {
-        "revenue_sweet_spot":  [30_000_000, 100_000_000],
-        "foci_threshold_usd":  5_000_000,
-        "cmmc_deadline":       "2026-11-10",
-        "rpe_midpoint":        350_000,
+    "platform_vitals": {
+        "target_segment":    "SRM Tier 2/3 Supply Chain",
+        "revenue_sweet_spot": [30_000_000, 100_000_000],
+        "rpe_midpoint":       350_000,
     },
+    "regulatory_gates": {
+        "foci_threshold":  5_000_000,
+        "cmmc_deadline":   "2026-11-01",
+        "niss_mandatory":  True,
+    },
+    "opsec_mask": "US Industrial Base Resilience Study",
+    # Extended fields used by BluestreakEngine
     "risk_weights": {
-        "foreign_board_member":    0.9,
-        "no_cmmc_pathway":         0.7,
+        "foreign_board_member":     0.9,
+        "no_cmmc_pathway":          0.7,
         "high_prime_concentration": 0.5,
     },
     "opsec": {
-        "mask":      "Industrial Base Resilience Mapping",
+        "mask":      "US Industrial Base Resilience Study",
         "forbidden": ["M&A", "Buyout", "Acquisition", "Valuation"],
     },
 }
 
+
+def _normalise(cfg: dict) -> dict:
+    """
+    Accept legacy vetting_standards shape or current platform_vitals shape.
+    Always returns canonical platform_vitals / regulatory_gates structure.
+    """
+    if "vetting_standards" in cfg and "platform_vitals" not in cfg:
+        vs = cfg["vetting_standards"]
+        cfg = dict(cfg)
+        cfg["platform_vitals"] = {
+            "target_segment":    "SRM Tier 2/3 Supply Chain",
+            "revenue_sweet_spot": vs.get("revenue_sweet_spot", [30_000_000, 100_000_000]),
+            "rpe_midpoint":       vs.get("rpe_midpoint", 350_000),
+        }
+        cfg["regulatory_gates"] = {
+            "foci_threshold": vs.get("foci_threshold_usd", 5_000_000),
+            "cmmc_deadline":  vs.get("cmmc_deadline", "2026-11-01"),
+            "niss_mandatory": True,
+        }
+        cfg.setdefault("opsec_mask", "US Industrial Base Resilience Study")
+    return cfg
+
 COMPANIES_FILE = os.path.join(os.path.dirname(__file__), "companies.json")
 
 
-class BluestreakEngine:
+def _purchasability_label(score: int) -> str:
+    if score >= 80:
+        return "CLEAN — Low-friction acquisition"
+    elif score >= 60:
+        return "MANAGEABLE — Known issues, workable"
+    elif score >= 40:
+        return "COMPLEX — Significant compliance work required"
+    elif score > 0:
+        return "HIGH-RISK — Structural deal blockers present"
+    return "OUT OF SCOPE"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BluestreakVetter — streamlined platform spec (latest)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class BluestreakVetter:
     """
-    Purchasability scoring engine for Project Bluestreak.
-    Evaluates acquisition cleanliness across three compliance dimensions:
-      1. Revenue band (RPE gate)
-      2. FOCI / NISS exposure (May 2026 rule)
-      3. CMMC Level 2 posture (Nov 10 2026 deadline)
-    Risk weights penalize foreign influence, CMMC gaps, and prime concentration.
+    Streamlined target vetter per latest platform spec.
+    Three hard gates: revenue band, FOCI/NISS, CMMC Level 2.
+    Returns REJECT or MATCH with score 0–100.
     """
 
     def __init__(self, config: dict = None):
-        self.cfg = config or DEFAULT_CONFIG
-        self._vs  = self.cfg["vetting_standards"]
-        self._rw  = self.cfg["risk_weights"]
+        self.cfg = _normalise(config or DEFAULT_CONFIG)
+        self._pv  = self.cfg["platform_vitals"]
+        self._rg  = self.cfg["regulatory_gates"]
+        self._mask = self.cfg.get("opsec_mask", "US Industrial Base Resilience Study")
+
+    def assess_target(self, company_data: dict) -> dict:
+        """
+        Score 0–100. Higher = cleaner, lower-friction acquisition.
+
+        Deductions:
+          FOCI/NISS (awards > $5M, not NISS eligible) : -40
+          CMMC Level 2 not certified                   : -30
+        """
+        # 1. Revenue filter — sweet spot 85–286 employees ($30M–$100M @ $350k RPE)
+        est_rev = company_data["headcount"] * self._pv["rpe_midpoint"]
+        lo, hi  = self._pv["revenue_sweet_spot"]
+        if not (lo <= est_rev <= hi):
+            return {
+                "status":  "REJECT",
+                "reason":  "Revenue Out of Scope",
+                "est_rev": est_rev,
+                "score":   0,
+            }
+
+        score = 100
+
+        # 2. May 2026 FOCI gate — contracts > $5M trigger mandatory NISS eligibility
+        awards = company_data.get("total_federal_awards",
+                                  company_data.get("total_awards",
+                                  company_data.get("annual_award_volume_usd", 0)))
+        if awards > self._rg["foci_threshold"]:
+            if not company_data.get("niss_eligible", True):
+                score -= 40  # Cannot close until NISS review completes (60–180 days)
+
+        # 3. CMMC Level 2 — Nov 1 2026 cutoff for self-affirmations
+        if not company_data.get("cmmc_l2_status",
+                                 company_data.get("cmmc_level_2", False)):
+            score -= 30  # Acquirer must fund remediation ($150k–$500k)
+
+        return {
+            "status":  "MATCH",
+            "score":   max(0, score),
+            "est_rev": est_rev,
+            "rating":  _purchasability_label(max(0, score)),
+        }
+
+    def screen_batch(self, companies: list[dict]) -> list[dict]:
+        results = []
+        for c in companies:
+            adapted = {
+                "headcount":            c.get("employee_count", 0),
+                "total_federal_awards": c.get("annual_award_volume_usd", 0),
+                "niss_eligible":        c.get("niss_eligible", True),
+                "cmmc_l2_status":       c.get("cmmc_level_2", False),
+            }
+            result = self.assess_target(adapted)
+            results.append({**c, "vetting": result})
+        return sorted(
+            [r for r in results if r["vetting"]["status"] == "MATCH"],
+            key=lambda x: x["vetting"]["score"],
+            reverse=True,
+        )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BluestreakEngine — full engine with risk weights + acquisition briefs
+# ══════════════════════════════════════════════════════════════════════════════
+
+class BluestreakEngine:
+    """
+    Full purchasability engine with risk weights, acquisition briefs, batch ranking.
+    Penalties aligned with BluestreakVetter: FOCI -40, CMMC flat -30.
+    Additional risk weights: foreign board -90, no CMMC pathway -70, prime conc -50.
+    """
+
+    def __init__(self, config: dict = None):
+        self.cfg  = _normalise(config or DEFAULT_CONFIG)
+        self._pv  = self.cfg["platform_vitals"]
+        self._rg  = self.cfg["regulatory_gates"]
+        self._rw  = self.cfg.get("risk_weights", DEFAULT_CONFIG["risk_weights"])
         self._deadline = datetime.datetime.strptime(
-            self._vs["cmmc_deadline"], "%Y-%m-%d"
+            self._rg["cmmc_deadline"], "%Y-%m-%d"
         )
         self._days_to_deadline = (self._deadline - datetime.datetime.now()).days
+
+    # convenience shim so old callers still work
+    @property
+    def _vs(self) -> dict:
+        return {
+            "revenue_sweet_spot": self._pv["revenue_sweet_spot"],
+            "foci_threshold_usd": self._rg["foci_threshold"],
+            "cmmc_deadline":      self._rg["cmmc_deadline"],
+            "rpe_midpoint":       self._pv["rpe_midpoint"],
+        }
 
     # ── Core Scoring ────────────────────────────────────────────────────────────
 
@@ -81,43 +213,42 @@ class BluestreakEngine:
                 "risk_multiplier": 1.0,
             }
 
-        # ── Gate 2: FOCI / NISS (New May 2026 Rule) ────────────────────────────
-        total_awards = company.get("total_awards", company.get("annual_award_volume_usd", 0))
-        if total_awards > self._vs["foci_threshold_usd"]:
+        # ── Gate 2: FOCI / NISS (May 2026 Rule) ────────────────────────────────
+        total_awards = company.get("total_awards",
+                       company.get("total_federal_awards",
+                       company.get("annual_award_volume_usd", 0)))
+        foci_thresh  = self._rg["foci_threshold"]
+        if total_awards > foci_thresh:
             if not company.get("niss_eligible", True):
-                score -= 30
+                score -= 40  # Cannot close until NISS review (60–180 days)
                 deductions.append({
                     "item":   "FOCI/NISS — not eligible",
-                    "points": -30,
+                    "points": -40,
                     "detail": (
                         f"Awards ${total_awards/1e6:.1f}M exceed "
-                        f"${self._vs['foci_threshold_usd']/1e6:.1f}M FOCI threshold. "
+                        f"${foci_thresh/1e6:.1f}M FOCI threshold. "
                         "New SF-328 filing required under May 2026 NISS rule. "
-                        "DSS review likely — adds 60–180 days to close timeline."
+                        "DSS review — adds 60–180 days to close timeline."
                     ),
                 })
                 flags.append("FOCI_NISS_RISK")
 
-        # ── Gate 3: CMMC Level 2 Deadline ──────────────────────────────────────
-        if not company.get("cmmc_level_2", False):
-            if self._days_to_deadline > 180:
-                penalty = 20
-                urgency = "MODERATE"
-            else:
-                penalty = 50
-                urgency = "CRITICAL"
-            score -= penalty
+        # ── Gate 3: CMMC Level 2 (Nov 1 2026 cutoff) ───────────────────────────
+        cmmc_certified = company.get("cmmc_level_2",
+                         company.get("cmmc_l2_status", False))
+        if not cmmc_certified:
+            score -= 30  # Flat penalty — acquirer funds remediation ($150k–$500k)
             deductions.append({
-                "item":   f"CMMC Level 2 — not certified [{urgency}]",
-                "points": -penalty,
+                "item":   "CMMC Level 2 — not certified",
+                "points": -30,
                 "detail": (
                     f"{self._days_to_deadline} days to deadline "
-                    f"({self._vs['cmmc_deadline']}). "
-                    f"Uncertified at close = contract eligibility risk. "
-                    f"Remediation cost est. $150k–$500k + 12–18 months."
+                    f"({self._rg['cmmc_deadline']}). "
+                    "Uncertified at close = contract eligibility risk. "
+                    "Remediation est. $150k–$500k + 12–18 months."
                 ),
             })
-            flags.append(f"CMMC_GAP_{urgency}")
+            flags.append("CMMC_GAP")
 
         # ── Risk Weight Penalties ───────────────────────────────────────────────
         if company.get("foreign_board_member", False):
@@ -173,22 +304,9 @@ class BluestreakEngine:
             "days_to_cmmc":         self._days_to_deadline,
             "deductions":           deductions,
             "flags":                flags,
-            "rating":               self._purchasability_label(final),
+            "rating":               _purchasability_label(final),
             "risk_multiplier":      round(score / 100, 2),
         }
-
-    @staticmethod
-    def _purchasability_label(score: int) -> str:
-        if score >= 80:
-            return "CLEAN — Low-friction acquisition"
-        elif score >= 60:
-            return "MANAGEABLE — Known issues, workable"
-        elif score >= 40:
-            return "COMPLEX — Significant compliance work required"
-        elif score > 0:
-            return "HIGH-RISK — Structural deal blockers present"
-        else:
-            return "OUT OF SCOPE"
 
     # ── Batch Processing ────────────────────────────────────────────────────────
 
@@ -232,16 +350,18 @@ class BluestreakEngine:
         }
         v = self.calculate_purchasability(adapted)
 
+        mask = self.cfg.get("opsec_mask",
+               self.cfg.get("opsec", {}).get("mask", "US Industrial Base Resilience Study"))
         lines = [
             f"{'═'*65}",
             f"  ACQUISITION BRIEF — {company.get('company_name', 'UNKNOWN').upper()}",
-            f"  {self.cfg['opsec']['mask']} // Confidential",
+            f"  {mask} // Confidential",
             f"{'═'*65}",
             "",
             f"  Strategic Score   : {company.get('total_score', '—')} / 110",
             f"  Purchasability    : {v['purchasability_score']} / 100  —  {v['rating']}",
             f"  Est. Revenue      : ${v['est_revenue']/1e6:.1f}M",
-            f"  CMMC Days Left    : {v['days_to_cmmc']} days to {self._vs['cmmc_deadline']}",
+            f"  CMMC Days Left    : {v['days_to_cmmc']} days to {self._rg['cmmc_deadline']}",
             "",
         ]
 
@@ -281,9 +401,7 @@ class BluestreakEngine:
             print("\n  No companies profiled. Run profiler.py first.")
             return
 
-        cmmc_alert = ""
-        if self._days_to_deadline <= 180:
-            cmmc_alert = f"  ⚠ CMMC DEADLINE {self._days_to_deadline} DAYS AWAY — uncertified companies take -50 penalty"
+        cmmc_alert = f"  ⚠ CMMC DEADLINE {self._days_to_deadline} DAYS AWAY ({self._rg['cmmc_deadline']}) — uncertified companies: -30 pts"
 
         print(f"\n{'═'*75}")
         print(f"  BLUESTREAK — RANKED ACQUISITION TARGETS")
@@ -315,7 +433,7 @@ class BluestreakEngine:
             "# Project Bluestreak — Compliance & Purchasability Report",
             f"**{self.cfg['opsec']['mask']} // Confidential**",
             f"*Generated: {datetime.date.today()}*",
-            f"*CMMC Deadline: {self._vs['cmmc_deadline']} — **{self._days_to_deadline} days remaining***",
+            f"*CMMC Deadline: {self._rg['cmmc_deadline']} — **{self._days_to_deadline} days remaining***",
             "",
             "---",
             "",
@@ -388,10 +506,9 @@ def main() -> None:
     engine = BluestreakEngine(config)
 
     print(f"\n  Bluestreak Vetting Engine initialized.")
-    print(f"  CMMC deadline: {config['vetting_standards']['cmmc_deadline']} "
-          f"({engine._days_to_deadline} days)")
-    if engine._days_to_deadline <= 180:
-        print(f"  ⚠ CRITICAL: Uncertified companies now take -50 CMMC penalty")
+    print(f"  CMMC deadline : {engine._rg['cmmc_deadline']} ({engine._days_to_deadline} days)")
+    print(f"  CMMC penalty  : -30 pts (flat) | FOCI penalty: -40 pts")
+    print(f"  OPSEC mask    : {engine.cfg.get('opsec_mask', 'US Industrial Base Resilience Study')}")
 
     while True:
         print(MENU)
@@ -432,11 +549,10 @@ def main() -> None:
 
         elif choice == "4":
             d = engine._days_to_deadline
-            status = "CRITICAL — -50 penalty active" if d <= 180 else f"WATCH — {d} days, -20 penalty"
-            print(f"\n  CMMC Level 2 Deadline: {config['vetting_standards']['cmmc_deadline']}")
-            print(f"  Days remaining       : {d}")
-            print(f"  Status               : {status}")
-            print(f"  Penalty (uncertified): {'-50' if d <= 180 else '-20'} points on purchasability score")
+            print(f"\n  CMMC Level 2 Deadline : {engine._rg['cmmc_deadline']}")
+            print(f"  Days remaining        : {d}")
+            print(f"  Penalty (uncertified) : -30 pts (flat, both engines)")
+            print(f"  FOCI penalty          : -40 pts (awards > $5M, NISS ineligible)")
 
         elif choice == "0":
             break

@@ -219,12 +219,18 @@ def sam_gov_entity_search() -> list[dict]:
 
 def linkedin_headcount_heuristics() -> dict:
     """
-    LinkedIn Sales Navigator / search heuristics for revenue-band proxying.
-    Defense manufacturing: $150k–$250k revenue per FTE.
-    Target band $35M–$100M → 140–670 FTEs (use 150–600 as search range).
+    A&D manufacturing RPE: $250k–$450k, mid $350k/FTE.
+    Target band $30M–$100M → 85–286 FTEs (sweet spot filter: 85–285).
+    Previous general-manufacturing RPE ($150k–$250k) understated A&D.
     """
     return {
-        "headcount_band": {"min": 150, "max": 600},
+        "headcount_band": {"min": 85, "max": 285},
+        "rpe_model": {
+            "low": 250_000,
+            "mid": 350_000,
+            "high": 450_000,
+            "band_calc": "$30M / $350k = 85 FTEs min  |  $100M / $350k = 286 FTEs max",
+        },
         "industries": [
             "Defense & Space",
             "Aviation & Aerospace",
@@ -233,10 +239,12 @@ def linkedin_headcount_heuristics() -> dict:
         ],
         "keywords_any": [kw for group in KEYWORDS.values() for kw in group[:2]],
         "geography": "United States",
+        "search_persona": "US Industrial Base Resilience Study",
         "notes": (
             "Run separate passes per SRM_STACK capability cluster. "
             "Cross-reference headcount hits against SAM.gov for CAGE code confirmation. "
-            "Do NOT include acquisition language in any search string."
+            "Use 'US Industrial Base Resilience Study' as search context — "
+            "no deal-specific language in any search string."
         ),
     }
 

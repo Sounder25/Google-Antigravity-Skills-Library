@@ -167,14 +167,21 @@ STATE_CLUSTERS = {
 
 # ── OPSEC Query Packaging ───────────────────────────────────────────────────────
 
-BLOCKED_KEYWORDS = ["Acquisition", "Takeover", "Due Diligence", "Client Name Redacted",
-                    "M&A", "merger", "acqui-hire", "buyout", "LOI", "term sheet"]
+BLOCKED_KEYWORDS = [
+    "Acquisition", "Takeover", "Due Diligence", "Client Name Redacted",
+    "M&A", "merger", "acqui-hire", "buyout", "Buyout", "LOI", "term sheet",
+]
 
 PERSONA_HEADER = (
-    "Search context: Industrial base research for defense manufacturing capacity "
-    "assessment. Queries are structured to identify domestic manufacturing capabilities "
-    "and supplier concentration in the solid rocket motor sector."
+    "US Industrial Base Resilience Study — mapping domestic manufacturing capacity "
+    "and supplier concentration in the solid rocket motor sector for defense "
+    "industrial base assessment purposes."
 )
+
+# A&D RPE constants (Step 2 — revenue estimation model)
+RPE_MID         = 350_000   # $250k–$450k range, $350k mid for A&D manufacturing
+HEADCOUNT_MIN   = 85        # $30M / $350k RPE
+HEADCOUNT_MAX   = 286       # $100M / $350k RPE
 
 
 def sanitize_query(query: str) -> str:
@@ -184,12 +191,58 @@ def sanitize_query(query: str) -> str:
     return query
 
 
+def normalize_config(raw: dict) -> dict:
+    """
+    Accept either the original bluestreak_config.json format or the
+    refined project_spec format supplied in Step 1. Returns a unified dict.
+    """
+    if "project_spec" in raw:
+        ps = raw["project_spec"]
+        tf = raw.get("technical_filters", {})
+        oc = raw.get("opsec_constraints", {})
+        return {
+            "project_metadata": {
+                "codename": ps.get("name", "Project Bluestreak"),
+                "objective": "US Defense Industrial Base Mapping - SRM Supply Chain",
+                "focus_tier": [2, 3],
+                "target_revenue_range": {
+                    "min": ps.get("revenue_floor", 30_000_000),
+                    "max": ps.get("revenue_ceiling", 100_000_000),
+                },
+                "hq_regions": [
+                    {"AL": "Alabama", "AR": "Arkansas", "UT": "Utah",
+                     "VA": "Virginia", "MS": "Mississippi"}.get(s, s)
+                    for s in ps.get("target_regions", [])
+                ],
+            },
+            "search_parameters": {
+                "naics_codes": tf.get("naics", []),
+                "keyword_clusters": tf.get("keywords", []),
+                "prime_contractors": tf.get("prime_partners", []),
+            },
+            "opsec_protocols": {
+                "anonymize_queries": True,
+                "avoid_keywords": oc.get("hard_blocks", BLOCKED_KEYWORDS),
+                "search_persona": oc.get("query_masking", "US Industrial Base Resilience Study"),
+                "local_storage_only": oc.get("local_storage_only", True),
+            },
+            "output_schema": raw.get("output_schema", {
+                "fields": ["company_name", "estimated_revenue_tier", "employee_count",
+                           "primary_capability", "prime_customer_history",
+                           "geographic_footprint", "sam_status"],
+                "format": "markdown_table",
+            }),
+        }
+    return raw
+
+
 def build_state_queries(config: dict) -> dict[str, dict]:
-    naics = config["search_parameters"]["naics_codes"]
+    config   = normalize_config(config)
+    naics    = config["search_parameters"]["naics_codes"]
     keywords = config["search_parameters"]["keyword_clusters"]
-    states = config["project_metadata"]["hq_regions"]
-    rev_min = config["project_metadata"]["target_revenue_range"]["min"]
-    rev_max = config["project_metadata"]["target_revenue_range"]["max"]
+    states   = config["project_metadata"]["hq_regions"]
+    rev_min  = config["project_metadata"]["target_revenue_range"]["min"]
+    rev_max  = config["project_metadata"]["target_revenue_range"]["max"]
 
     queries = {}
     for state in states:
@@ -236,11 +289,9 @@ def build_state_queries(config: dict) -> dict[str, dict]:
             for n in hot
         ]
 
-        emp_min = int((rev_min * 0.40) / 200_000)
-        emp_max = int((rev_max * 0.70) / 150_000)
-
         linkedin = {
-            "headcount_range": f"{emp_min}–{emp_max} employees",
+            "headcount_range": f"{HEADCOUNT_MIN}–{HEADCOUNT_MAX} employees",
+            "headcount_note": f"A&D RPE $350k/FTE → ${rev_min/1e6:.0f}M–${rev_max/1e6:.0f}M band",
             "location_filter": state,
             "industry_filters": ["Defense & Space", "Aviation & Aerospace", "Chemicals", "Industrial Machinery"],
             "keyword_passes": [sanitize_query(kw) for kw in keywords[:3]],
@@ -286,6 +337,7 @@ def revenue_tier_label(c: dict) -> str:
 
 
 def generate_matrix(config: dict) -> str:
+    config    = normalize_config(config)
     companies = load_companies()
     fields    = config["output_schema"]["fields"]
     states    = config["project_metadata"]["hq_regions"]
@@ -370,6 +422,7 @@ def sec_edgar_queries(config: dict) -> list[dict]:
 # ── Report Generation ───────────────────────────────────────────────────────────
 
 def generate_full_report(config: dict) -> str:
+    config    = normalize_config(config)
     codename  = config["project_metadata"]["codename"]
     states    = config["project_metadata"]["hq_regions"]
     rev_min   = config["project_metadata"]["target_revenue_range"]["min"] / 1e6

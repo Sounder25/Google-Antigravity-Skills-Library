@@ -95,26 +95,57 @@ def score_gov_contracts(annual_award_volume_usd: float) -> tuple[int, str]:
         return 0, f"Minimal or no federal contract presence"
 
 
+def estimate_revenue(headcount: int) -> tuple[bool, float]:
+    """
+    A&D manufacturing RPE: $250k–$450k depending on facility automation.
+    Mid-point $350k used for sweet-spot scoring.
+    $30M–$100M band = 85–286 employees.
+    """
+    RPE_MID = 350_000
+    est_rev = headcount * RPE_MID
+    in_band = 30_000_000 <= est_rev <= 100_000_000
+    return in_band, est_rev
+
+
 def score_revenue_proxy(employee_count: int, annual_awards: float) -> tuple[int, str]:
     """
-    Proxy for $35M–$100M revenue band.
-    Defense mfg rule of thumb: $150k–$250k revenue per employee.
-    Gov awards typically = 40–70% of revenue for Tier 2/3.
+    A&D manufacturing RPE: $250k–$450k, mid $350k.
+    Sweet spot: 85–286 employees maps to $30M–$100M.
+    Award proxy: gov contracts typically 40–70% of Tier 2/3 revenue.
     """
-    emp_revenue_low = employee_count * 150_000
-    emp_revenue_high = employee_count * 250_000
-    award_revenue_low = annual_awards / 0.70
-    award_revenue_high = annual_awards / 0.40
+    RPE_LOW, RPE_MID, RPE_HIGH = 250_000, 350_000, 450_000
+    est_low  = employee_count * RPE_LOW
+    est_mid  = employee_count * RPE_MID
+    est_high = employee_count * RPE_HIGH
 
-    in_band_emp = emp_revenue_low <= 100_000_000 and emp_revenue_high >= 30_000_000
-    in_band_award = award_revenue_low <= 100_000_000 and award_revenue_high >= 30_000_000
+    award_proxy = (annual_awards / 0.55) if annual_awards > 0 else 0
 
-    if in_band_emp and in_band_award:
-        return 20, f"Strong fit — both employee ({employee_count} FTEs) and award proxies land in $30M–$100M band"
-    elif in_band_emp or in_band_award:
-        return 12, f"Partial fit — one proxy lands in $30M–$100M band"
+    mid_in_band    = 30_000_000 <= est_mid  <= 100_000_000
+    range_in_band  = est_low   <= 100_000_000 and est_high >= 30_000_000
+    award_in_band  = 30_000_000 <= award_proxy <= 100_000_000
+
+    if mid_in_band and award_in_band:
+        return 20, (
+            f"Strong — RPE mid ${est_mid/1e6:.1f}M ({employee_count} FTEs @ $350k) "
+            f"+ award proxy ${award_proxy/1e6:.1f}M — both in band"
+        )
+    elif mid_in_band:
+        return 15, (
+            f"RPE mid ${est_mid/1e6:.1f}M in band — "
+            f"award proxy ${award_proxy/1e6:.1f}M {'in band' if award_in_band else 'outside band'}"
+        )
+    elif range_in_band and award_in_band:
+        return 12, (
+            f"Partial — RPE range ${est_low/1e6:.1f}M–${est_high/1e6:.1f}M clips band, "
+            f"award proxy ${award_proxy/1e6:.1f}M aligned"
+        )
+    elif range_in_band or award_in_band:
+        return 6, (
+            f"Marginal — RPE mid ${est_mid/1e6:.1f}M, "
+            f"award proxy ${award_proxy/1e6:.1f}M — one signal near band"
+        )
     else:
-        return 4, f"Weak fit — estimated revenue likely outside target band"
+        return 2, f"Weak — RPE mid ${est_mid/1e6:.1f}M likely outside $30M–$100M band"
 
 
 def score_prime_relationships(primes: list[str]) -> tuple[int, str]:

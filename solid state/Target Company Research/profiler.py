@@ -392,6 +392,14 @@ def add_company() -> None:
     print("\n── SRM Stack Role ──")
     srm_role = prompt_choice("Primary role in SRM stack", SRM_STACK_ROLES)
 
+    print("\n── Compliance & Risk (Vetting Engine Inputs) ──")
+    print(f"  CMMC deadline: 2026-11-10  (check vetting_engine.py for penalty status)")
+    cmmc_level_2       = prompt_bool("CMMC Level 2 certified?")
+    cmmc_pathway_exists = prompt_bool("CMMC pathway / SSP documented?")
+    niss_eligible      = prompt_bool("NISS eligible (no disqualifying FOCI)?")
+    foreign_board_member = prompt_bool("Foreign national on board or advisory committee?")
+    prime_concentration_pct = prompt_int("Single-prime revenue concentration % (0=unknown)", 0)
+
     print("\n── Identifier 8: M&A Readiness ──")
     ma_signal      = prompt_choice("M&A Readiness Signal", MA_SIGNALS)
     broker_engaged = prompt_bool("Investment banker or broker engaged?")
@@ -421,10 +429,15 @@ def add_company() -> None:
         "sbir_signal":             sbir_signal,
         "sub_award_confirmed":     sub_award_confirmed,
         "srm_role":                srm_role,
-        "ma_signal":               ma_signal,
-        "broker_engaged":          broker_engaged,
-        "asking_price_usd":        asking_price if asking_price > 0 else None,
-        "notes":                   notes,
+        "cmmc_level_2":             cmmc_level_2,
+        "cmmc_pathway_exists":      cmmc_pathway_exists,
+        "niss_eligible":            niss_eligible,
+        "foreign_board_member":     foreign_board_member,
+        "prime_concentration_pct":  prime_concentration_pct,
+        "ma_signal":                ma_signal,
+        "broker_engaged":           broker_engaged,
+        "asking_price_usd":         asking_price if asking_price > 0 else None,
+        "notes":                    notes,
     }
 
     scored = compute_total_score(raw_profile)
@@ -436,8 +449,9 @@ def add_company() -> None:
 
     print("\n" + "═" * 60)
     print(f"  PROFILE SAVED: {company_name}")
-    print(f"  TOTAL SCORE:   {scored['total_score']} / 100")
+    print(f"  TOTAL SCORE:   {scored['total_score']} / 110")
     print(f"  ASSESSMENT:    {scored['tier_fit']}")
+    print(f"  Run vetting_engine.py for purchasability score (CMMC/FOCI analysis)")
     print("═" * 60)
 
 

@@ -107,6 +107,20 @@ def estimate_revenue(headcount: int) -> tuple[bool, float]:
     return in_band, est_rev
 
 
+def check_revenue_fit(headcount: int) -> tuple[bool, float]:
+    """
+    Bluestreak Step 2 — revenue fit gate.
+    Targets: $30M–$100M Revenue.
+    A&D RPE Midpoint: $350k.
+    Calculated Headcount Range: 85–286 FTEs.
+    """
+    RPE_A_D = 350_000
+    estimated_revenue = headcount * RPE_A_D
+    if 30_000_000 <= estimated_revenue <= 100_000_000:
+        return True, estimated_revenue
+    return False, estimated_revenue
+
+
 def score_revenue_proxy(employee_count: int, annual_awards: float) -> tuple[int, str]:
     """
     A&D manufacturing RPE: $250k–$450k, mid $350k.

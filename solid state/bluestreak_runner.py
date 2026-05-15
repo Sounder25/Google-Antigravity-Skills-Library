@@ -39,9 +39,9 @@ def load_companies() -> list[dict]:
 
 STATE_CLUSTERS = {
     "Utah": {
-        "srm_significance": "CRITICAL",
+        "srm_significance": "HIGH",
         "rationale": (
-            "Promontory, UT is the geographic center of US solid propellant production. "
+            "Promontory, UT is a legacy hub for large-scale composite motor cases. "
             "Northrop Grumman's Propulsion Systems division (ATK legacy) operates the "
             "largest SRM facility in the world here. Tier 2/3 ecosystem is deep — "
             "composite casing shops, propellant chemical suppliers, and test services "
@@ -88,13 +88,13 @@ STATE_CLUSTERS = {
         ),
     },
     "Arkansas": {
-        "srm_significance": "HIGH",
+        "srm_significance": "CRITICAL",
         "rationale": (
-            "Camden, AR hosts one of the largest ordnance manufacturing complexes in "
-            "the US. General Dynamics OTS operates a major artillery and rocket motor "
-            "facility here. Camden's industrial base includes multiple Tier 2/3 "
-            "energetic material processors and propellant component manufacturers "
-            "that exist nowhere else domestically."
+            "Camden, AR is the heart of US propellant 'mix and cast' operations. "
+            "General Dynamics OTS operates a major artillery and rocket motor facility "
+            "here. Camden's industrial base includes multiple Tier 2/3 energetic material "
+            "processors and propellant component manufacturers that exist nowhere else "
+            "domestically — the highest target density of any single city in the study."
         ),
         "anchor_primes": ["General Dynamics OTS (Camden)", "Lockheed Martin (Camden)"],
         "hot_naics": ["325920", "332993", "325180"],
@@ -172,10 +172,11 @@ BLOCKED_KEYWORDS = [
     "M&A", "merger", "acqui-hire", "buyout", "Buyout", "LOI", "term sheet",
 ]
 
+OPSEC_PREPEND  = "Study on US defense industrial base resilience and SME capacity."
 PERSONA_HEADER = (
-    "US Industrial Base Resilience Study — mapping domestic manufacturing capacity "
-    "and supplier concentration in the solid rocket motor sector for defense "
-    "industrial base assessment purposes."
+    f"{OPSEC_PREPEND} Mapping domestic manufacturing capacity and supplier "
+    "concentration in the solid rocket motor sector for defense industrial base "
+    "assessment purposes."
 )
 
 # A&D RPE constants (Step 2 — revenue estimation model)

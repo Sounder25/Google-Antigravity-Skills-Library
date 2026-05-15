@@ -13,6 +13,8 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), "companies.json")
 NAICS_TARGETS = {
     "336415": "Guided Missile & Space Vehicle Propulsion Units",
     "325920": "Explosives Manufacturing (AP, energetic materials)",
+    "332710": "Screw Machine / Precision Machined Parts (nozzle throats, inserts)",
+    "325211": "Plastics & Synthetic Resin Mfg (HTPB, polymer binders)",
     "332993": "Ammunition (non-small arms) / Propellant Mfg",
     "325180": "Inorganic Chemicals (Oxidizers, Ammonium Perchlorate)",
     "336419": "Other Guided Missile / Space Vehicle Parts",
@@ -104,13 +106,13 @@ def score_revenue_proxy(employee_count: int, annual_awards: float) -> tuple[int,
     award_revenue_low = annual_awards / 0.70
     award_revenue_high = annual_awards / 0.40
 
-    in_band_emp = emp_revenue_low <= 100_000_000 and emp_revenue_high >= 35_000_000
-    in_band_award = award_revenue_low <= 100_000_000 and award_revenue_high >= 35_000_000
+    in_band_emp = emp_revenue_low <= 100_000_000 and emp_revenue_high >= 30_000_000
+    in_band_award = award_revenue_low <= 100_000_000 and award_revenue_high >= 30_000_000
 
     if in_band_emp and in_band_award:
-        return 20, f"Strong fit — both employee ({employee_count} FTEs) and award proxies land in $35M–$100M band"
+        return 20, f"Strong fit — both employee ({employee_count} FTEs) and award proxies land in $30M–$100M band"
     elif in_band_emp or in_band_award:
-        return 12, f"Partial fit — one proxy lands in $35M–$100M band"
+        return 12, f"Partial fit — one proxy lands in $30M–$100M band"
     else:
         return 4, f"Weak fit — estimated revenue likely outside target band"
 
